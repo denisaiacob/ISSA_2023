@@ -295,9 +295,9 @@ class Ui_MainWindow(object):
         self.interiorLed = True
         self.set_interior_lights()
 
-        if self.thread.isRunning():
-            self.thread.terminate()
-            self.sweep_leds(4)
+        # if self.thread.isRunning():
+        #     self.thread.terminate()
+        #     self.sweep_leds(4)
 
         self.KL_position = 0
         self.KL_lights(self.KL_position)
