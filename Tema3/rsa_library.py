@@ -132,10 +132,10 @@ def number_check(hex_nr):
         return False
 
 
-(pk, sk) = generate_keypair(prime_number_1, prime_number_2)
-enc = encrypt(pk, "0xFE01")
-print(enc)
-dec = decrypt(sk, enc)
-print(dec)
-print(low_check('0xfe01'))
-print(number_check('0xfe01'))
+# (pk, sk) = generate_keypair(prime_number_1, prime_number_2)
+# enc = encrypt(pk, "0xFE01")
+# print(enc)
+# dec = decrypt(sk, enc)
+# print(dec)
+# print(low_check('0xfe01'))
+# print(number_check('0xfe01'))

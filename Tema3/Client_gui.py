@@ -105,6 +105,7 @@ class Ui_MainWindow(object):
     def start_client(self):
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         client.connect((HOST, PORT))
+        self.se = client
 
         self.corrupted_low_label.clear()
         self.airbag_on_label.clear()
@@ -114,35 +115,57 @@ class Ui_MainWindow(object):
         self.corrupted_low.setEnabled(False)
         print("Client connected")
 
-        self.public_key = client.recv(1024).decode()
-        self.private_key = client.recv(1024).decode()
-        self.modulud = client.recv(1024).decode()
-        print(f'Received ({self.public_key}, {self.private_key})')
-        ok_client = True
+        self.pub_k = int(client.recv(1024).decode())
+        self.priv_k = int(client.recv(1024).decode())
+        self.modul = int(client.recv(1024).decode())
+        print("Received:", self.pub_k, self.priv_k, self.modul)
+
         self.recv_messages()
 
     ############################### EXERCISE 8 ###############################
     def recv_messages(self):
-        pass
+        self.stop_event = threading.Event()
+        self.c_thread = threading.Thread(name='messages', target=self.recv_handler, args=(self.stop_event,))
+        self.c_thread.start()
 
     def recv_handler(self, stop_event):
-        pass
+        print("The client received the messages")
+        while stop_event:
+            msg = self.se.recv(1024).decode()
+            print("The message received by the client:", msg)
+            private_key = (self.priv_k, self.modul)
+            msg = rsa_library.decrypt(private_key, msg)
+
+            if msg == '0xfd02':
+                print("Unlocking car")
+                self.airbag.setEnabled(True)
+                self.corrupted_low.setEnabled(True)
+                self.corrupted_high.setEnabled(True)
+            elif msg == '1':
+                self.corrupted_low_label.setText('Success')
+            elif msg == '0':
+                self.airbag_on_label.setText('Error')
 
     ############################### EXERCISE 9 ###############################
     def send_on_data(self):
-        pass
-
-    ''' complete with necesarry code '''
+        public_key = (self.pub_k, self.modul)
+        msg = rsa_library.encrypt(public_key, airbag_on)
+        self.se.send(str(msg).encode())
+        print("Airbag on")
 
     ############################### EXERCISE 10 ###############################
     def send_corrupted_low(self):
-        pass
-        ''' complete with necesarry code '''
+        public_key = (self.pub_k, self.modul)
+        msg = rsa_library.encrypt(public_key, corrupted_low)
+        self.se.send(str(msg).encode())
+        print("Corrupted low ")
 
     ############################### EXERCISE 11 ###############################
     def send_corrupted_high(self):
-        pass
-        ''' complete with necesarry code '''
+        public_key = (self.pub_k, self.modul)
+        msg = rsa_library.encrypt(public_key, corrupted_high)
+        self.se.send(str(msg).encode())
+        print("Corrupted high")
 
     def kill_proc_tree(self, pid, including_parent=True):
         parent = psutil.Process(pid)

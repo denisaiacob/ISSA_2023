@@ -134,10 +134,9 @@ class Ui_MainWindow(object):
 
     ############################### EXERCISE 6 ###############################
     def send_key_data(self):
-        print('Sending encrypted unlock')
-
-        unlock_enc = encrypt(self.public_key, unlockCar)
-        self.conex.send(str(unlock_enc).encode())
+        msg = rsa_library.encrypt(self.pub_key, unlockCar)
+        self.conex.send(str(msg).encode())
+        print("Unlocked car")
 
         self.dashboard_label.setVisible(True)
         self.unlock.setVisible(False)
@@ -146,25 +145,25 @@ class Ui_MainWindow(object):
     ############################### EXERCISE 7 ###############################
     def recv_messages(self):
         self.stop_event = threading.Event()
-        self.c_thread = threading.Thread(target=self.recv_messages_handler, args=(self.stop_event,))
+        self.c_thread = threading.Thread(name='messages', target=self.recv_messages_handler, args=(self.stop_event,))
         self.c_thread.start()
 
     def recv_messages_handler(self, stop_event):
-        print("Receiving messages")
+        print("The server recived the messages")
 
         while True:
             msg = self.conex.recv(1024).decode()
-            print(f'Receiving {msg}')
-            msg = decrypt(self.private_key, msg)
+            print("The message received by the server:", msg)
+            msg = rsa_library.decrypt(self.pri_key, msg)
 
-            if not low_check(msg):
-                self.conex.send(str(1).encode())
-            elif low_check(msg):
-                self.conex.send(str(0).encode())
-            elif not number_check(msg):
-                self.conex.send(str(1).encode())
-            elif number_check(msg):
-                self.conex.send(str(0).encode())
+            if not rsa_library.low_check(msg):
+                self.conex.send(str('1').encode())
+            elif rsa_library.low_check(msg):
+                self.conex.send(str('0').encode())
+            elif not rsa_library.number_check(msg):
+                self.conex.send(str('1').encode())
+            elif rsa_library.number_check(msg):
+                self.conex.send(str('0').encode())
 
     ##############################################################
     def images(self):
