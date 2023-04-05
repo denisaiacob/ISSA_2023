@@ -9,7 +9,6 @@ import sys, time
 
 HOST = 'localhost'
 PORT = 12346
-ok_client = False
 airbag_on = '0xfe01'
 corrupted_low = '0x5732'
 corrupted_high = '0x5701'
@@ -21,6 +20,9 @@ class Ui_MainWindow(object):
     pub_k = 0
     modul = 0
     ok1 = False
+    ok_airbag = False
+    ok_low = False
+    ok_high = False
 
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -135,22 +137,48 @@ class Ui_MainWindow(object):
             print("The message received by the client:", msg)
             private_key = (self.priv_k, self.modul)
             msg = rsa_library.decrypt(private_key, msg)
-
+            print(msg)
             if msg == '0xfd02':
                 print("Unlocking car")
                 self.airbag.setEnabled(True)
                 self.corrupted_low.setEnabled(True)
                 self.corrupted_high.setEnabled(True)
-            elif msg == '1':
-                self.corrupted_low_label.setText('Success')
-            elif msg == '0':
-                self.airbag_on_label.setText('Error')
+            if self.ok_airbag:
+                self.corrupted_low_label.setEnabled(False)
+                self.corrupted_high_label.setEnabled(False)
+                if msg.strip() == '0x0':
+                    self.airbag_on_label.setText('Error')
+                    self.airbag.setDisabled(True)
+                    self.airbag.clearMask()
+                elif msg.strip() == '0x1':
+                    self.airbag_on_label.setText('Success')
+            elif self.ok_low:
+                self.airbag_on_label.setEnabled(False)
+                self.corrupted_low_label.setEnabled(False)
+                if msg.strip() == '0x1':
+                    self.corrupted_low_label.setText('Success')
+                elif msg.strip() == '0x0':
+                    self.corrupted_low_label.setText('Error')
+                    self.corrupted_low.setDisabled(True)
+                    self.corrupted_low.clearMask()
+            elif self.ok_high:
+                self.corrupted_low_label.setEnabled(False)
+                self.airbag_on_label.setEnabled(False)
+                if msg.strip() == '0x1':
+                    self.corrupted_high_label.setText('Success')
+                elif msg.strip() == '0x0':
+                    self.corrupted_high_label.setText('Error')
+                    self.corrupted_high.setDisabled(True)
+                    self.corrupted_high.clearMask()
 
     ############################### EXERCISE 9 ###############################
     def send_on_data(self):
         public_key = (self.pub_k, self.modul)
         msg = rsa_library.encrypt(public_key, airbag_on)
         self.se.send(str(msg).encode())
+        self.ok_airbag = True
+        self.ok_low = False
+        self.ok_high = False
         print("Airbag on")
 
     ############################### EXERCISE 10 ###############################
@@ -158,6 +186,9 @@ class Ui_MainWindow(object):
         public_key = (self.pub_k, self.modul)
         msg = rsa_library.encrypt(public_key, corrupted_low)
         self.se.send(str(msg).encode())
+        self.ok_airbag = False
+        self.ok_low = True
+        self.ok_high = False
         print("Corrupted low ")
 
     ############################### EXERCISE 11 ###############################
@@ -165,6 +196,9 @@ class Ui_MainWindow(object):
         public_key = (self.pub_k, self.modul)
         msg = rsa_library.encrypt(public_key, corrupted_high)
         self.se.send(str(msg).encode())
+        self.ok_airbag = False
+        self.ok_low = False
+        self.ok_high = True
         print("Corrupted high")
 
     def kill_proc_tree(self, pid, including_parent=True):
